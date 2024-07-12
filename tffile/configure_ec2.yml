@@ -1,0 +1,19 @@
+---
+- name: Configure EC2 Instance
+  hosts: ec2_instances  # Targeting the group defined in your inventory
+  become: yes  # Allows tasks to run with root privileges
+
+  tasks:
+    - name: Update apt package cache
+      apt:
+        update_cache: yes  # Ensures the package cache is updated before installing packages
+
+    - name: Install nginx
+      apt:
+        name: nginx  # Installs the nginx package
+        state: present  # Ensures nginx is present on the system
+
+    - name: Start nginx service
+      service:
+        name: nginx  # Specifies the service name to manage
+        state: started  # Ensures the nginx service is started

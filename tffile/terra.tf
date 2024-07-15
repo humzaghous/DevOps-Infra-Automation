@@ -94,13 +94,13 @@ resource "aws_instance" "devops_instance" {
   }
 
   provisioner "file" {
-    source      = "tffile/configure_ec2.yml"
+    source      = "configure_ec2.yml"
     destination = "/home/ec2-user/configure_ec2.yml"
 
     connection {
       type        = "ssh"
       user        = "ec2-user"
-      private_key = file("tffile/my_key_pair.pem")
+      private_key = file("my_key_pair.pem")
       host        = self.public_ip
     }
   }
@@ -111,13 +111,13 @@ resource "aws_instance" "devops_instance" {
       "sudo yum update -y",
       "sudo yum install python3-pip -y",
       "sudo pip3 install ansible",
-      "ansible-playbook /home/ec2-user/configure_ec2.yml"
+      "ansible-playbook configure_ec2.yml"
     ]
 
     connection {
       type        = "ssh"
       user        = "ec2-user"
-      private_key = file("tffile/my_key_pair.pem")
+      private_key = file("my_key_pair.pem")
       host        = self.public_ip
     }
   }
@@ -127,7 +127,7 @@ resource "aws_instance" "devops_instance" {
 data "template_file" "inventory" {
   template = <<-EOT
   [ec2_instances]
-  ${aws_instance.devops_instance.public_ip} ansible_user=ec2-user ansible_ssh_private_key_file=tffile/my_key_pair.pem
+  ${aws_instance.devops_instance.public_ip} ansible_user=ec2-user ansible_ssh_private_key_file=my_key_pair.pem
   EOT
 }
 
@@ -141,7 +141,7 @@ resource "null_resource" "run_ansible" {
   depends_on = [aws_instance.devops_instance, local_file.inventory]
 
   provisioner "local-exec" {
-    command     = "sleep 30 && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i tffile/inventory.ini tffile/configure_ec2.yml"
+    command     = "sleep 30 && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini configure_ec2.yml"
     working_dir = path.module
   }
 }

@@ -114,7 +114,7 @@ resource "aws_instance" "devops_instance" {
 data "template_file" "inventory" {
   template = <<-EOT
   [ec2_instances]
-  ${aws_instance.devops_instance.public_ip} ansible_user=ec2-user ansible_ssh_private_key_file=/home/tk-lpt-0152/Downloads/DevOps-Infra-Automation/tffile/my_key_pair.pem
+  ${aws_instance.devops_instance.public_ip} ansible_user=ec2-user ansible_ssh_private_key_file=my_key_pair.pem
   EOT
 }
 
@@ -128,7 +128,7 @@ resource "null_resource" "run_ansible" {
   depends_on = [aws_instance.devops_instance, local_file.inventory]
 
   provisioner "local-exec" {
-    command     = "sleep 30 && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini /home/tk-lpt-0152/Downloads/DevOps-Infra-Automation/ansible/configure_ec2.yml"
+    command     = "sleep 30 && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini configure_ec2.yml"
     working_dir = path.module
   }
 }

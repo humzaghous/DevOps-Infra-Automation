@@ -83,29 +83,41 @@ resource "aws_security_group" "ssh_access" {
 
 # Create an EC2 Instance
 resource "aws_instance" "devops_instance" {
-  ami                    = "ami-0b72821e2f351e396"  # Replace with your AMI ID
+  ami                    = "ami-0b72821e2f351e396"
   instance_type          = "t2.micro"
   subnet_id              = aws_subnet.my_public_subnet.id
   vpc_security_group_ids = [aws_security_group.ssh_access.id]
-  key_name               = "my_key_pair"  # Replace with your key pair name
+  key_name               = "my_key_pair"
 
   tags = {
     Name = "devops_instance"
   }
 
+  provisioner "file" {
+    source      = "tffile/configure_ec2.yml"
+    destination = "/home/ec2-user/configure_ec2.yml"
+
+    connection {
+      type        = "ssh"
+      user        = "ec2-user"
+      private_key = file("tffile/my_key_pair.pem")
+      host        = self.public_ip
+    }
+  }
+
   provisioner "remote-exec" {
     inline = [
-      "sudo yum update -y",  # For Amazon Linux, use yum instead of apt
+      "sudo yum update -y",
       "sudo yum install python3-pip -y",
       "sudo pip3 install ansible",
-      "ansible-playbook configure_ec2.yml"
+      "ansible-playbook /home/ec2-user/configure_ec2.yml"
     ]
 
     connection {
       type        = "ssh"
       user        = "ec2-user"
-      private_key = file("my_key_pair.pem")  # Path to your private key
-      host        = aws_instance.devops_instance.public_ip
+      private_key = file("tffile/my_key_pair.pem")
+      host        = self.public_ip
     }
   }
 }
@@ -114,12 +126,12 @@ resource "aws_instance" "devops_instance" {
 data "template_file" "inventory" {
   template = <<-EOT
   [ec2_instances]
-  ${aws_instance.devops_instance.public_ip} ansible_user=ec2-user ansible_ssh_private_key_file=my_key_pair.pem
+  ${aws_instance.devops_instance.public_ip} ansible_user=ec2-user ansible_ssh_private_key_file=tffile/my_key_pair.pem
   EOT
 }
 
 resource "local_file" "inventory" {
-  filename = "inventory.ini"
+  filename = "tffile/inventory.ini"
   content  = data.template_file.inventory.rendered
 }
 
@@ -128,7 +140,7 @@ resource "null_resource" "run_ansible" {
   depends_on = [aws_instance.devops_instance, local_file.inventory]
 
   provisioner "local-exec" {
-    command     = "sleep 30 && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini configure_ec2.yml"
+    command     = "sleep 30 && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i tffile/inventory.ini tffile/configure_ec2.yml"
     working_dir = path.module
   }
 }

@@ -36,3 +36,11 @@ jobs:
       with:
         name: inventory
         path: tffile/inventory.ini
+
+    - name: Run Ansible Playbook
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ansible
+        ansible-playbook -i tffile/inventory.ini tffile/configure_ec2.yml
+      env:
+        ANSIBLE_HOST_KEY_CHECKING: "False"

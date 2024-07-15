@@ -104,7 +104,7 @@ resource "aws_instance" "devops_instance" {
     connection {
       type        = "ssh"
       user        = "ec2-user"
-      private_key = file("/home/tk-lpt-0152/Downloads/DevOps-Infra-Automation/tffile/my_key_pair.pem")  # Path to your private key
+      private_key = file("my_key_pair.pem")  # Path to your private key
       host        = aws_instance.devops_instance.public_ip
     }
   }
